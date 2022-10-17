@@ -1,25 +1,80 @@
-import React from 'react';
+import { getAuth, sendPasswordResetEmail, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import app from '../Firebase/Firebase.config';
+
+const auth = getAuth(app);
 
 const Login = () => {
+  const [user, setUser] = useState({})
+
+  const handleLogInForm = (event) => {
+    event.preventDefault();
+    const form = event.target;
+    const email = form.email.value;
+    const password = form.password.value;
+
+    signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        // Signed in 
+        const user = userCredential.user;
+        setUser(user)
+        // ...
+      })
+      .catch((error) => {
+        // const errorCode = error.code;
+        // const errorMessage = error.message;
+        setUser({})
+      });
+
+    form.reset()
+
+    signOut(auth)
+      .then(() => {
+        setUser({})
+      })
+      .catch((error) => {
+        setUser({})
+      });
+  }
+
+  const handleGetEmail = (e) => {
+    const userEmail = e.target.value
+    handleResetPassword(userEmail)
+  }
+
+  const handleResetPassword = (userEmail) => {
+    if (!userEmail) {
+      alert('use a valid email.')
+    } else {
+      sendPasswordResetEmail(auth, userEmail)
+        .then(() => {
+          alert('Check Your Email TO Reset Password!')
+        })
+        .catch((error) => {
+        });
+    }
+  }
+
+
   return (
 
     <div className="w-full mt-10 max-w-sm p-6 m-auto mx-auto bg-slate-100 rounded-md shadow-md dark:bg-gray-800">
 
-      <form className="mt-6">
+      <form onSubmit={handleLogInForm} className="mt-6">
         <div className="mt-4">
           <div className="flex items-center justify-between">
             <label htmlFor="email" className="block text-sm text-gray-800 dark:text-gray-200">User-Email</label>
 
           </div>
 
-          <input type="email" name='email' className="block w-full px-4 py-2 mt-2 text-gray-700 bg-white border rounded-md dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 focus:border-blue-400 dark:focus:border-blue-300 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40" />
+          <input onBlur={handleGetEmail} type="email" name='email' className="block w-full px-4 py-2 mt-2 text-gray-700 bg-white border rounded-md dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 focus:border-blue-400 dark:focus:border-blue-300 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40" />
         </div>
 
         <div className="mt-4">
           <div className="flex items-center justify-between">
             <label htmlFor="password" className="block text-sm text-gray-800 dark:text-gray-200">Password</label>
-            <Link to={''} className="text-xs text-gray-600 dark:text-gray-400 hover:underline">Forget Password?</Link>
+            <Link onClick={handleResetPassword} className="text-xs text-gray-600 dark:text-gray-400 hover:underline">Forget Password?</Link>
           </div>
 
           <input type="password" name='password' className="block w-full px-4 py-2 mt-2 text-gray-700 bg-white border rounded-md dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 focus:border-blue-400 dark:focus:border-blue-300 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40" />
@@ -28,9 +83,17 @@ const Login = () => {
         <div className="mt-6">
 
 
-          <button className="w-full px-4 py-2 tracking-wide text-white transition-colors duration-300 transform bg-gray-700 rounded-md hover:bg-gray-600 focus:outline-none focus:bg-gray-600">
-            Login
-          </button>
+          {
+            !user.email ?
+              <button className="w-full px-4 py-2 tracking-wide text-white transition-colors duration-300 transform bg-gray-700 rounded-md hover:bg-gray-600 focus:outline-none focus:bg-gray-600">
+                LogIn
+              </button>
+              :
+              <button className="w-full px-4 py-2 tracking-wide text-white transition-colors duration-300 transform bg-gray-700 rounded-md hover:bg-gray-600 focus:outline-none focus:bg-gray-600">
+                LogOut
+              </button>
+
+          }
 
         </div>
       </form>
@@ -66,6 +129,10 @@ const Login = () => {
 
       <p className="mt-8 text-xs font-light text-center text-gray-400"> Don't have an account?
         <Link to={'/resister'} className="font-medium mx-1 text-gray-700 dark:text-gray-200 hover:underline">Create One</Link></p>
+
+      {
+        user.email && <small className="text-blue-900 border border-green-900">{user.email}</small>
+      }
 
     </div>
   );

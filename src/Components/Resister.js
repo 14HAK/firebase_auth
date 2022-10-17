@@ -1,24 +1,93 @@
-import React from 'react';
+import { createUserWithEmailAndPassword, getAuth, sendEmailVerification, updateProfile } from "firebase/auth";
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import app from '../Firebase/Firebase.config';
+
+const auth = getAuth(app);
 
 const Resister = () => {
+  const [passErrMsg, setPassErrMsg] = useState()
+  const [success, setSuccess] = useState(false)
+
+  const handleFormSubmit = (event) => {
+    event.preventDefault()
+
+    const form = event.target;
+    const userName = form.username.value;
+    const email = form.email.value;
+    const password = form.password.value;
+
+    if (!/(?=.*[A-Z])/.test(password)) {
+      setPassErrMsg('need a uppercase latter.')
+      return;
+    }
+    if (!/(?=.*[!@#$&*])/.test(password)) {
+      setPassErrMsg('need a special carecter.')
+      return;
+    }
+
+    if (!/.{6}/.test(password)) {
+      setPassErrMsg('Password should be 6 charecter.')
+      return;
+    }
+
+    setSuccess(false)
+
+    createUserWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        // Signed in 
+        const user = userCredential.user;
+        updateUser(userName)
+        verifyEmail()
+        setSuccess(true)
+        form.reset()
+        console.log(user);
+      })
+      .catch((error) => {
+        setPassErrMsg(error.message)
+      });
+  }
+
+  const verifyEmail = () => {
+    sendEmailVerification(auth.currentUser)
+      .then(() => {
+        alert('verify your email')
+      });
+  }
+
+  const updateUser = (name) => {
+    updateProfile(auth.currentUser, {
+      displayName: name
+    })
+      .then(() => {
+        // Profile updated!
+        // ...
+      }).catch((error) => {
+        // An error occurred
+        // ...
+      });
+  }
+
+
+
+
   return (
     <div>
       <div className="w-full mt-5 max-w-sm p-6 m-auto mx-auto bg-slate-100 rounded-md shadow-md dark:bg-gray-800">
 
-        <form className="mt-6">
+        <form onSubmit={handleFormSubmit} className="mt-6">
           <div className="mt-4">
             <div className="flex items-center justify-between">
               <label htmlFor="username" className="block text-sm text-gray-800 dark:text-gray-200">User-Name</label>
             </div>
-            <input type="text" name='username' className="block w-full px-4 py-2 mt-2 text-gray-700 bg-white border rounded-md dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 focus:border-blue-400 dark:focus:border-blue-300 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40" />
+            <input type="text" name='username' required className="block w-full px-4 py-2 mt-2 text-gray-700 bg-white border rounded-md dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 focus:border-blue-400 dark:focus:border-blue-300 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40" />
           </div>
 
           <div className="mt-4">
             <div className="flex items-center justify-between">
               <label htmlFor="email" className="block text-sm text-gray-800 dark:text-gray-200">Email</label>
             </div>
-            <input type="email" name='email' className="block w-full px-4 py-2 mt-2 text-gray-700 bg-white border rounded-md dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 focus:border-blue-400 dark:focus:border-blue-300 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40" />
+            <input type="email" name='email' required className="block w-full px-4 py-2 mt-2 text-gray-700 bg-white border rounded-md dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 focus:border-blue-400 dark:focus:border-blue-300 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40" />
           </div>
 
           <div className="mt-4">
@@ -28,12 +97,20 @@ const Resister = () => {
 
             <input type="password" name='password' className="block w-full px-4 py-2 mt-2 text-gray-700 bg-white border rounded-md dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 focus:border-blue-400 dark:focus:border-blue-300 focus:ring-blue-300 focus:outline-none focus:ring focus:ring-opacity-40" />
           </div>
+          {
+            !success &&
+            <small className="mt-2 text-red-600">{passErrMsg}</small>
+          }
 
           <div className="mt-6">
             <button className="w-full px-4 py-2 tracking-wide text-white transition-colors duration-300 transform bg-gray-700 rounded-md hover:bg-gray-600 focus:outline-none focus:bg-gray-600">
               Resister
             </button>
           </div>
+
+          {
+            success && <small className="mt-2 text-green-600">Resistration User Account</small>
+          }
         </form>
 
         <div className="flex items-center justify-between mt-4">
